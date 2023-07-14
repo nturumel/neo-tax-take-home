@@ -1,0 +1,90 @@
+{
+  "name": "neo-tax-take-home-starter",
+  "version": "0.1.4",
+  "private": true,
+  "description": "Neo.Tax Take-home Assignment: Starter Code",
+  "main": "build/server/index.js",
+  "scripts": {
+    "build:server": "cross-env NODE_ENV=development tsc -p ./src/server/tsconfig.json --watch",
+    "db:migration:deploy": "npx prisma migrate deploy",
+    "db:migration:generate": "npx prisma migrate dev --name",
+    "db:prisma:generate": "npx prisma generate",
+    "db:seed": "npx prisma db seed",
+    "docker:build": "docker build -t neo-tax/take-home .",
+    "docker:db:migrate": "docker-compose --profile migrate_db run --rm migrate_db",
+    "docker:db:seed": "docker-compose --profile seed_db run --rm seed_db",
+    "docker:start": "docker-compose up",
+    "docker:stop": "docker-compose down",
+    "format": "prettier --write \"**/*.{js,jsx,json,ts,tsx}\"",
+    "lint": "eslint --fix --ext .js,.jsx,.json,.ts,.tsx .",
+    "start": "npm run db:prisma:generate && concurrently \"npm run build:server\" \"npm run start:server\" \"npm run start:client\"",
+    "start:client": "cross-env NODE_ENV=development webpack serve",
+    "start:server": "cross-env NODE_ENV=development nodemon ./build/server/index.js"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neo-tax/take-home-starter.git"
+  },
+  "author": "Firas Abuzaid <firas@neo.tax>",
+  "bugs": {
+    "url": "https://github.com/neo-tax/take-home-starter/issues"
+  },
+  "homepage": "https://github.com/neo-tax/take-home-starter#readme",
+  "dependencies": {
+    "@emotion/react": "^11.7.1",
+    "@emotion/styled": "^11.6.0",
+    "@mui/icons-material": "^5.2.5",
+    "@mui/material": "^5.2.7",
+    "@mui/styled-engine-sc": "^5.1.0",
+    "@prisma/client": "^5.1.1",
+    "compression": "^1.7.4",
+    "express": "^4.17.2",
+    "node-fetch": "^2.6.6",
+    "normalize.css": "^8.0.1",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "styled-components": "^5.3.3"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-runtime": "^7.16.7",
+    "@babel/preset-env": "^7.16.7",
+    "@babel/preset-react": "^7.16.7",
+    "@babel/preset-typescript": "^7.16.7",
+    "@mui/lab": "^5.0.0-alpha.63",
+    "@types/compression": "^1.7.2",
+    "@types/node": "^20.4.1",
+    "@types/node-fetch": "^2.0.0",
+    "@types/react": "^18.2.14",
+    "@types/react-dom": "^18.2.7",
+    "@typescript-eslint/eslint-plugin": "^5.9.0",
+    "@typescript-eslint/parser": "^5.9.0",
+    "babel-jest": "^27.4.6",
+    "babel-loader": "^8.2.3",
+    "concurrently": "^7.0.0",
+    "cross-env": "^7.0.3",
+    "css-loader": "^6.5.1",
+    "css-minimizer-webpack-plugin": "^3.3.1",
+    "eslint": "^8.6.0",
+    "eslint-plugin-react": "^7.28.0",
+    "eslint-plugin-react-hooks": "^4.3.0",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.5.0",
+    "mini-css-extract-plugin": "^2.4.6",
+    "nodemon": "^2.0.15",
+    "prettier": "^3.0.0",
+    "prisma": "^5.1.1",
+    "sass": "^1.47.0",
+    "sass-loader": "^12.4.0",
+    "style-loader": "^3.3.1",
+    "typescript": "^4.5.4",
+    "webpack": "^5.65.0",
+    "webpack-cli": "^4.9.1",
+    "webpack-dev-server": "^4.7.2"
+  },
+  "engines": {
+    "node": "18.16.0"
+  }
+}
