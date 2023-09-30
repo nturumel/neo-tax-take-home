@@ -22,7 +22,7 @@ export async function updateOrCreate(merchant: MerchantSchema): Promise<void> {
       name: merchant.name,
     },
     update: {
-      isOwnedByBezos: merchant.isOwnedByBezos,
+      isOwnedBy: merchant.isOwnedBy,
     },
     create: merchant,
   });

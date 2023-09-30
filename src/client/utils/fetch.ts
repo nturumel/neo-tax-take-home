@@ -76,12 +76,12 @@ export async function fetchMerchants(): Promise<Merchant[] | null> {
 }
 
 function isValidMerchant(merchant: Merchant): boolean {
-  return typeof merchant.name === 'string' && typeof merchant.isOwnedByBezos === 'boolean';
+  return typeof merchant.name === 'string' && typeof merchant.isOwnedBy === 'string';
 }
 
 /**
- * Add merchants to back-end as Bezos owned.
- * @param merchants Array of Bezos owned merchants.
+ * Add merchants to back-end.
+ * @param merchants Array of owned merchants.
  */
 export async function addMerchants(merchants: Merchant[]): Promise<boolean> {
   const response = await fetch('/api/merchants', {
@@ -115,6 +115,27 @@ export async function deleteMerchants(merchants: Merchant[]): Promise<boolean> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(merchants),
+  });
+
+  const result = await response.json();
+
+  if (response.status !== 200) {
+    console.error(result.error);
+    return false;
+  }
+
+  return true;
+}
+
+// Add this function to update a single merchant
+export async function updateMerchant(merchant: Merchant): Promise<boolean> {
+  const response = await fetch('/api/merchants', {
+    method: 'PUT',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify([merchant]), // Wrapping in array as your backend expects an array
   });
 
   const result = await response.json();

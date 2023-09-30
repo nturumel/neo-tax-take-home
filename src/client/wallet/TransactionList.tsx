@@ -6,23 +6,26 @@ import { Transaction } from './../../shared/types';
 
 export default function TransactionList({
   transactions,
-  bezosMerchants,
-  toggleBezosMerchant,
+  merchantsMap,
+  handleChangeOfOwner,
 }: {
   transactions: Transaction[];
-  bezosMerchants: Set<string>;
-  toggleBezosMerchant: (name: string, isOwnedByBezos: boolean) => void;
+  merchantsMap: Map<string, {
+    name: string;
+    isOwnedBy: string;
+  }>;
+  handleChangeOfOwner: (name: string, isOwnedBy: string) => void;
 }) {
   return (
     <Stack spacing={1}>
       {transactions.map((transaction: Transaction): JSX.Element => {
-        const isOwnedByBezos: boolean = bezosMerchants.has(transaction.merchantName);
+        const isOwnedBy = merchantsMap.get(transaction.merchantName)?.isOwnedBy || '';
 
         return (
           <TogglableTransaction
             key={transaction.id}
-            transaction={Object.assign({ isOwnedByBezos }, transaction)}
-            toggleBezosMerchant={toggleBezosMerchant}
+            transaction={Object.assign({ isOwnedBy }, transaction)}
+            handleChangeOfOwner={handleChangeOfOwner}
           />
         );
       })}

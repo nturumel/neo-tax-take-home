@@ -11,7 +11,7 @@ datasource db {
 }
 
 model merchants {
-  id    Int     @id @default(autoincrement())
-  name String  @unique
-  isOwnedByBezos Boolean @default(true)
+  id        Int    @id @default(autoincrement())
+  name      String @unique
+  isOwnedBy String @default("")
 }
