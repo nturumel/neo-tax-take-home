@@ -1,18 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 
 import * as merchantsModel from '../models/merchant';
-import { MerchantSchema } from '../utils/types';
+import { merchant } from '@prisma/client';
 
 /**
  * Fetch a list of merchants from the database.
  * @param res If successful, res.locals.merchants will contain an array of Merchant objects.
  */
 export async function getMerchants(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const dbMerchants: MerchantSchema[] = await merchantsModel.getMerchants();
+  const dbMerchants: merchant[] = await merchantsModel.getMerchants();
   // Sanitize merchants and convert to front-end compatible format
-  const merchants: MerchantSchema[] = dbMerchants.map((dbMerchant) => ({
+  const merchants: merchant[] = dbMerchants.map((dbMerchant) => ({
+    id: dbMerchant.id,
     name: dbMerchant.name,
-    isOwnedByBezos: dbMerchant.isOwnedByBezos,
+    billionaireId: dbMerchant.billionaireId,
   }));
   res.locals.merchants = merchants;
   return next();
@@ -23,7 +24,7 @@ export async function getMerchants(req: Request, res: Response, next: NextFuncti
  * @param req Requires request body to contain the list of merchants.
  */
 export async function updateOrCreate(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const merchants: MerchantSchema[] = req.body;
+  const merchants: merchant[] = req.body;
   await Promise.all(merchants.map((merchant) => merchantsModel.updateOrCreate(merchant)));
   return next();
 }
@@ -33,7 +34,7 @@ export async function updateOrCreate(req: Request, res: Response, next: NextFunc
  * @param req Requires request body to contain the list of merchants.
  */
 export async function deleteMany(req: Request, res: Response, next: NextFunction): Promise<void> {
-  const merchants: MerchantSchema[] = req.body;
+  const merchants: merchant[] = req.body;
   await Promise.all(merchants.map((merchant) => merchantsModel.remove(merchant)));
   return next();
 }

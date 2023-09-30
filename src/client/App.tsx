@@ -3,154 +3,161 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 
 import Header from './wallet/Header';
-import Stats from './wallet/BezoStats';
+import BillionaireStats from './wallet/BillionaireStats';
 import TransactionList from './wallet/TransactionList';
 import Splash from './shared/Splash';
 import { Transaction } from './../shared/types';
-import { fetchTransactions, fetchMerchants, addMerchants, deleteMerchants } from './utils/fetch';
+import { fetchTransactions, fetchMerchants, addMerchants, fetchBillionaires } from './utils/fetch';
+import { billionaire, merchant } from '.prisma/client';
 
 const POLL_FREQUENCY_MS = 10000;
 
-/**
- * Remove a merchant from app state.
- * @param name Merchant name
- * @param setBezosMerchants Setter function bezosMerchants state.
- */
-function removeMerchant(name: string, setBezosMerchants: React.Dispatch<React.SetStateAction<Set<string> | null>>) {
-  setBezosMerchants((bezosMerchants) => {
-    if (!bezosMerchants) return bezosMerchants;
-
-    const newSet: Set<string> = new Set(bezosMerchants);
-    newSet.delete(name);
-
-    return newSet;
-  });
-}
-
-/**
- * Add a merchant to app state.
- * @param name Merchant name
- * @param setBezosMerchants Setter function bezosMerchants state.
- */
-function addMerchant(name: string, setBezosMerchants: React.Dispatch<React.SetStateAction<Set<string> | null>>) {
-  setBezosMerchants((bezosMerchants) => {
-    if (!bezosMerchants) return bezosMerchants;
-
-    const newSet: Set<string> = new Set(bezosMerchants);
-    newSet.add(name);
-
-    return newSet;
-  });
-}
-
 export default function App() {
-  const [transactions, setTransactions] = useState<Transaction[] | null>(null);
-  // Using a set for O(1) merchant lookup
-  const [bezosMerchants, setBezosMerchants] = useState<Set<string> | null>(null);
-
+  const [transactionMap, setTransactionMap] = useState<Map<number, Transaction>>();
+  const [billionaireMap, setBillionaireMap] = useState<Map<number, billionaire>>();
+  const [merchantMap, setMerchantMap] = useState<Map<string, merchant>>();
+  const [billionaireTotalMap, setBillionaireTotal] = useState<Map<string, { amount: number, percent: number }>>();
+  const [totalSpending, setTotalSpending] = useState<number>(0);
   /**
-   * Coordinate setting app state and request to back-end to set a merchant as owned or not owned by Bezos.
-   * @param name Name of merchant
-   * @param isOwnedByBezos Boolean indicating if merchant is owned by Bezos.
+   * Coordinate setting app state and request to back-end to set a merchant as owned or not owned by Billionaire.
+   * @param merchantName Name of merchant
+   * @param billionaireName string indicating if merchant is owned by a billionaire.
    */
-  const toggleBezosMerchant = useCallback(
-    async (name: string, isOwnedByBezos: boolean) => {
-      if (!bezosMerchants) {
-        throw new Error(
-          'Should not be able to toggle merchant ownership before we have list of merchants owned by Bezos.',
-        );
+  const handleMerchantOwnerChange = useCallback(
+    async (merchantName: string, billionaireId: number | null) => {
+
+      // Step 1: Update local state
+      const updatedMerchantMap = new Map(merchantMap);
+      const merchant = updatedMerchantMap.get(merchantName);
+      const billionaire = billionaireMap?.get(billionaireId || -1);
+
+      if (merchant && billionaire) {
+        merchant.billionaireId = billionaire.id;
+      } else if (merchant) {
+        merchant.billionaireId = null;
+      }
+      setMerchantMap(updatedMerchantMap);
+
+      // Step 2: Send updated information to the backend
+      const isAdded = await addMerchants(Array.from(updatedMerchantMap.values()));
+      if (!isAdded) {
+        console.error('Failed to update merchants.');
+        return;
       }
 
-      if (bezosMerchants.has(name)) {
-        if (!isOwnedByBezos) {
-          removeMerchant(name, setBezosMerchants);
+      // Step 3: Refresh the list (it might be outdated)
+      const updatedMerchants = await fetchMerchants();
+      if (updatedMerchants) {
+        setMerchantMap(new Map(updatedMerchants.map(m => [m.name, m])));
+      }
 
-          const isDeleted: boolean = await deleteMerchants([{ name, isOwnedByBezos }]);
-
-          if (!isDeleted) {
-            console.error('Unable to delete merchant.');
-            addMerchant(name, setBezosMerchants);
-
-            // Front-end may be out of sync due to multiple clients, fetch list of merchants
-            const merchants = await fetchMerchants();
-            if (!merchants) return;
-
-            setBezosMerchants(new Set(merchants.map((merchant) => merchant.name)));
-          }
-        }
-      } else {
-        if (isOwnedByBezos) {
-          addMerchant(name, setBezosMerchants);
-
-          const isAdded: boolean = await addMerchants([{ name, isOwnedByBezos }]);
-
-          if (!isAdded) {
-            console.error('Unable to add merchant.');
-            removeMerchant(name, setBezosMerchants);
-          }
-        }
+      const updatedBillionaires = await fetchBillionaires();
+      if (updatedBillionaires) {
+        setBillionaireMap(new Map(updatedBillionaires.map(b => [b.id, b])));
       }
     },
-    [bezosMerchants],
+    [billionaireMap, merchantMap]
   );
 
-  // On component did mount, send request to for transactions and Bezos' merchants
+  // Add this useEffect for initial data fetching
   useEffect(() => {
-    const fetchTransactionsAndMerchants = async () => {
-      const transactions = await fetchTransactions();
-      setTransactions(transactions);
+    console.log('Initial Rendering')
+    // Fetch initial transactions
+    const fetchData = async () => {
+      const initialTransactions = await fetchTransactions();
+      if (initialTransactions) {
+        setTransactionMap(new Map(initialTransactions.map(t => [t.id, t])));
+      }
 
-      const merchants = await fetchMerchants();
-      if (!merchants) return;
+      // Similarly, you can fetch initial merchants and billionaires
+      const initialMerchants = await fetchMerchants();
+      if (initialMerchants) {
+        setMerchantMap(new Map(initialMerchants.map(m => [m.name, m])));
+      }
 
-      setBezosMerchants(
-        new Set(merchants.filter((merchant) => merchant.isOwnedByBezos).map((merchant) => merchant.name)),
-      );
+      const initialBillionaires = await fetchBillionaires();
+      if (initialBillionaires) {
+        setBillionaireMap(new Map(initialBillionaires.map(b => [b.id, b])));
+      }
     };
-    fetchTransactionsAndMerchants();
+
+    fetchData();
   }, []);
+
 
   // Set up and tear down update polling as transactions update
   useEffect(() => {
-    if (!transactions) return;
+    if (!transactionMap) return;
 
-    const maxTransactionID: number = transactions.reduce((max, transaction) => Math.max(max, transaction.id), -1);
+    const maxTransactionID: number = Array.from(transactionMap.values()).reduce((max, transaction) => Math.max(max, transaction.id), -1);
 
     const intervalID = setInterval(async () => {
       const newTransactions: Transaction[] | null = await fetchTransactions(maxTransactionID);
       if (!newTransactions || newTransactions.length === 0) return;
 
-      setTransactions((transactions) => (!transactions ? transactions : [...transactions, ...newTransactions]));
+      setTransactionMap((prevTransactionsMap) => {
+        const updatedTransactionsMap = new Map(prevTransactionsMap);
+        newTransactions.forEach((transaction) => {
+          updatedTransactionsMap.set(transaction.id, transaction);
+        });
+        return updatedTransactionsMap;
+      });
     }, POLL_FREQUENCY_MS);
 
     // Teardown function
     return () => clearInterval(intervalID);
-  }, [transactions]);
+  }, [transactionMap]);
 
-  let totalSpending: number = 0;
-  let bezosTotal: number = 0;
-  if (transactions && bezosMerchants) {
-    transactions?.forEach((transaction) => {
-      totalSpending += transaction.amount;
-      if (bezosMerchants?.has(transaction.merchantName)) bezosTotal += transaction.amount;
-    });
-  }
-  const percent: number = (bezosTotal / totalSpending) * 100;
+
+  const calculateTotals = useCallback(() => {
+    const newBillionaireTotalMap = new Map<string, { amount: number, percent: number }>();
+
+    if (transactionMap && billionaireMap && merchantMap) {
+
+      transactionMap.forEach((transaction) => {
+        setTotalSpending(totalSpending + transaction.amount);
+        const merchant = merchantMap.get(transaction.merchantName);
+        if (merchant && merchant.billionaireId) {
+          const billionaire = billionaireMap.get(merchant.billionaireId);
+          if (billionaire) {
+            const billionaireName = billionaire.name;
+            const prevTotal = newBillionaireTotalMap.get(billionaireName) || { amount: 0, percent: 0 };
+            newBillionaireTotalMap.set(billionaireName, { ...prevTotal, amount: prevTotal.amount + transaction.amount });
+          }
+        }
+      });
+
+      // Calculate percent
+      newBillionaireTotalMap.forEach((value, key) => {
+        newBillionaireTotalMap.set(key, { ...value, percent: (value.amount / totalSpending) * 100 });
+      });
+    }
+
+    setBillionaireTotal(newBillionaireTotalMap);
+  }, [transactionMap, billionaireMap, merchantMap, totalSpending]);
+
+  useEffect(() => {
+    calculateTotals();
+  }, [transactionMap, billionaireMap, merchantMap, calculateTotals]);
+
 
   return (
     <div id="app">
       <Paper sx={{ padding: 2, borderRadius: 3 }}>
         <Stack spacing={4}>
           <Header />
-          {!transactions || !bezosMerchants ? (
+          {!transactionMap || !billionaireMap ? (
             <Splash />
           ) : (
             <>
-              <Stats total={bezosTotal} percent={percent} />
+              {Array.from(billionaireTotalMap?.entries() ?? []).map(([billionaireName, { amount, percent }]) => (
+                <BillionaireStats key={billionaireName} billionaireName={billionaireName} total={amount} percent={percent} />
+              ))}
               <TransactionList
-                transactions={transactions}
-                bezosMerchants={bezosMerchants}
-                toggleBezosMerchant={toggleBezosMerchant}
+                transactions={transactionMap ? Array.from(transactionMap.values()) : []}
+                billionaires={billionaireMap ? Array.from(billionaireMap.values()) : []}
+                merchantMap={merchantMap}
+                handleMerchantOwnerChange={handleMerchantOwnerChange}
               />
             </>
           )}

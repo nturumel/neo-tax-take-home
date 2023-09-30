@@ -10,7 +10,7 @@ export default function Header() {
   return (
     <Stack spacing={2}>
       <Typography variant="h2" color="primary.main">
-        Bezos Wallet
+        Billionaire Wallet
       </Typography>
 
       <Typography variant="h4" sx={{ fontWeight: 300 }}>

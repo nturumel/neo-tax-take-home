@@ -1,28 +1,40 @@
 import React from 'react';
 import Stack from '@mui/material/Stack';
 
-import TogglableTransaction from './../shared/TogglableTransaction';
+import IndividualTransaction from '../shared/IndividualTransaction';
 import { Transaction } from './../../shared/types';
 
 export default function TransactionList({
   transactions,
-  bezosMerchants,
-  toggleBezosMerchant,
+  billionaires,
+  handleMerchantOwnerChange,
+  merchantMap
 }: {
   transactions: Transaction[];
-  bezosMerchants: Set<string>;
-  toggleBezosMerchant: (name: string, isOwnedByBezos: boolean) => void;
+  billionaires: {
+    id: number;
+    name: string;
+  }[];
+  merchantMap: Map<string, {
+    id: number;
+    name: string;
+    billionaireId: number | null;
+  }> | undefined;
+  handleMerchantOwnerChange: (merchantName: string, billionaireId: number | null) => void;
 }) {
   return (
     <Stack spacing={1}>
       {transactions.map((transaction: Transaction): JSX.Element => {
-        const isOwnedByBezos: boolean = bezosMerchants.has(transaction.merchantName);
-
+        const merchant = merchantMap?.get(transaction.merchantName);
         return (
-          <TogglableTransaction
+          <IndividualTransaction
             key={transaction.id}
-            transaction={Object.assign({ isOwnedByBezos }, transaction)}
-            toggleBezosMerchant={toggleBezosMerchant}
+            billionaires={billionaires}
+            transaction={{
+              ...transaction,
+              billionaireId: merchant?.billionaireId || -1
+            }}
+            handleMerchantOwnerChange={handleMerchantOwnerChange}
           />
         );
       })}

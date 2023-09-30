@@ -1,21 +1,21 @@
 import { Router, Request, Response, NextFunction } from 'express';
 
-import * as merchantsController from '../controllers/merchants';
-import { merchant } from 'prisma/prisma-client';
+import * as billionaireController from '../controllers/billionaire';
+import { billionaire } from 'prisma/prisma-client';
 
 const router: Router = Router();
 
 /**
  * Endpoint for fetching an array of all the merchants.
  */
-router.get('/', merchantsController.getMerchants, (_req: Request, res: Response, next: NextFunction) => {
+router.get('/', billionaireController.getBillionaires, (_req: Request, res: Response, next: NextFunction) => {
   if (!res.locals.merchants) {
     return next('Reached responding middleware function without res.locals.merchants set.');
   }
 
-  const frontendMerchants: merchant = res.locals.merchants.map((merchant: merchant) => ({
-    name: merchant.name,
-    isOwnedByBezos: merchant.billionaireId,
+  const frontendMerchants: billionaire = res.locals.merchants.map((billionaire: billionaire) => ({
+    name: billionaire.name,
+    id: billionaire.id,
   }));
 
   return res.json(frontendMerchants);
@@ -25,7 +25,7 @@ router.get('/', merchantsController.getMerchants, (_req: Request, res: Response,
  * Endpoint for creating new merchant entries in database. Accepts an array of merchant objects in body
  * of the request.
  */
-router.post('/', merchantsController.updateOrCreate, (_req: Request, res: Response) => {
+router.post('/', billionaireController.updateOrCreate, (_req: Request, res: Response) => {
   return res.json({ message: 'success' });
 });
 
@@ -33,7 +33,7 @@ router.post('/', merchantsController.updateOrCreate, (_req: Request, res: Respon
  * Endpoint for updating (with upsert) merchant entries in database. Accepts an array of merchant objects
  * in body of the request.
  */
-router.put('/', merchantsController.updateOrCreate, (_req: Request, res: Response) => {
+router.put('/', billionaireController.updateOrCreate, (_req: Request, res: Response) => {
   return res.json({ message: 'success' });
 });
 
@@ -41,7 +41,7 @@ router.put('/', merchantsController.updateOrCreate, (_req: Request, res: Respons
  * Endpoint for deleting merchant entries in database. Accepts an array of merchant objects in body of
  * the request.
  */
-router.delete('/', merchantsController.deleteMany, (_req: Request, res: Response) => {
+router.delete('/', billionaireController.deleteMany, (_req: Request, res: Response) => {
   return res.json({ message: 'success' });
 });
 

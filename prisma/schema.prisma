@@ -10,8 +10,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model merchants {
-  id    Int     @id @default(autoincrement())
-  name String  @unique
-  isOwnedByBezos Boolean @default(true)
+model billionaire {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  merchants merchant[] // One-to-many relation with Merchant
+	@@map("billionaires")
+}
+
+model merchant {
+  id            Int          @id @default(autoincrement())
+  name          String       @unique
+  billionaireId Int? // Foreign key for Billionaire
+  billionaire   billionaire? @relation(fields: [id], references: [id])
+	@@map("merchants")
 }

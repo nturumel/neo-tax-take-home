@@ -4,8 +4,3 @@ export type Transaction = {
   date: Date;
   amount: number;
 };
-
-export type Merchant = {
-  name: string;
-  isOwnedByBezos: boolean;
-};
