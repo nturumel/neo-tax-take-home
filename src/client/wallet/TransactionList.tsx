@@ -2,7 +2,7 @@ import React from 'react';
 import Stack from '@mui/material/Stack';
 
 import TogglableTransaction from './../shared/TogglableTransaction';
-import { Billionaire, Transaction } from './../../shared/types';
+import { Transaction } from './../../shared/types';
 
 export default function TransactionList({
   transactions,
@@ -15,7 +15,7 @@ export default function TransactionList({
     name: string;
     isOwnedBy: string;
   }>;
-  billionaires: Billionaire[]
+  billionaires: string[]
   handleChangeOfOwner: (name: string, isOwnedBy: string) => void;
 }) {
   return (

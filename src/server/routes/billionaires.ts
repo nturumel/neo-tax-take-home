@@ -45,4 +45,23 @@ router.delete('/', billionaireController.deleteMany, (_req: Request, res: Respon
   }
 });
 
+router.post('/create', billionaireController.createBillionaire, (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    return res.json({ message: 'success' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Add this line to your router
+router.delete('/deleteByName', billionaireController.deleteByName, (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    return res.json({ message: 'success' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+
 export default router;

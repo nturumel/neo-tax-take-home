@@ -35,3 +35,21 @@ export async function updateOrCreate(billionaire: billionaires): Promise<void> {
 export async function remove(billionaire: billionaires): Promise<void> {
   await prisma.billionaires.deleteMany({ where: { name: billionaire.name } });
 }
+
+/**
+ * Create a new billionaire in the database.
+ * @param data Object containing the name of the billionaire.
+ * @returns Boolean result of operation.
+ */
+export async function create(data: { name: string }): Promise<void> {
+  await prisma.billionaires.create({
+    data: {
+      name: data.name,
+    },
+  });
+}
+
+// Delete a billionaire by name
+export async function removeByName(name: string): Promise<void> {
+  await prisma.billionaires.deleteMany({ where: { name } });
+}

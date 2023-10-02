@@ -220,3 +220,45 @@ export async function deleteBillionaires(billionaires: Billionaire[]): Promise<b
 
   return true;
 }
+
+// Add billionaires to back-end.
+export async function createBillionaire(name: string): Promise<boolean> {
+  const response = await fetch('/api/billionaires/create', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  });
+
+  const result = await response.json();
+
+  if (response.status !== 200) {
+    console.error(result.error);
+    return false;
+  }
+
+  return true;
+}
+
+// Delete a single billionaire by name from back-end.
+export async function deleteBillionaireByName(name: string): Promise<boolean> {
+  const response = await fetch('/api/billionaires/deleteByName', {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  });
+
+  const result = await response.json();
+
+  if (response.status !== 200) {
+    console.error(result.error);
+    return false;
+  }
+
+  return true;
+}

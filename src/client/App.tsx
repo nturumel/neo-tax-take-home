@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Grid, List, ListItem, TextField, Typography } from '@mui/material';
 import { Billionaire, Merchant, Transaction } from './../shared/types';
 import Splash from './shared/Splash';
-import { addBillionaires, deleteBillionaires, fetchBillionaires, fetchMerchants, fetchTransactions, updateMerchant } from './utils/fetch';
+import { addBillionaires, createBillionaire, deleteBillionaireByName, deleteBillionaires, fetchBillionaires, fetchMerchants, fetchTransactions, updateMerchant } from './utils/fetch';
 import Stats from './wallet/BezoStats';
 import Header from './wallet/Header';
 import TransactionList from './wallet/TransactionList';
@@ -15,27 +15,46 @@ const POLL_FREQUENCY_MS = 10000;
 export default function App() {
   const [transactions, setTransactions] = useState<Transaction[] | null>(null);
   const [merchantsMap, setMerchantsMap] = useState<Map<string, Merchant> | null>(null);
-  const [billionaires, setBillionaires] = useState<Billionaire[] | null>(null);
+  const [billionaires, setBillionaires] = useState<string[] | null>(null);
   const [billionaireSpending, setBillionaireSpending] = useState<Record<string, number>>({});
   const [totalSpending, setTotalSpending] = useState<number>(0);
+  const [totalSpendingNotToBillionaires, setTotalSpendingNotToBillionaires] = useState<number>(0);
+  const [percentSpendingNotToBillionaires, setPercentSpendingNotToBillionaires] = useState<number>(0);
 
   const [newBillionaireName, setNewBillionaireName] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
 
   const handleAddBillionaire = async () => {
-    const newBillionaire = { name: newBillionaireName, id: -1 }; // Assuming the backend will auto-generate an ID
-    const isSuccess = await addBillionaires([newBillionaire]);
+    const isSuccess = await createBillionaire(newBillionaireName);
     if (isSuccess) {
-      setBillionaires([...(billionaires || []), newBillionaire]);
+      setBillionaires([...(billionaires || []), newBillionaireName]);
       setNewBillionaireName('');
+      setErrorMessage(null); // Clear any existing error messages
+    } else {
+      setErrorMessage('Failed to add billionaire.');
     }
   };
 
   const handleDeleteBillionaire = async (name: string) => {
-    const isSuccess = await deleteBillionaires([{ name: name, id: -1 }]);
+    const isSuccess = await deleteBillionaireByName(name);
     if (isSuccess) {
-      setBillionaires(billionaires?.filter(b => b.name !== name) || null);
+      setBillionaires(billionaires?.filter(b => b !== name) || null);
+      setErrorMessage(null); // Clear any existing error messages
+
+      // Update merchantsMap if needed
+      if (merchantsMap) {
+        merchantsMap.forEach(async (merchant, merchantName) => {
+          if (merchant.isOwnedBy === name) {
+            await handleChangeOfOwner(merchantName, ''); // set to empty or another billionaire
+          }
+        });
+      }
+    } else {
+      setErrorMessage('Failed to delete billionaire.');
     }
   };
+
 
   const handleChangeOfOwner = useCallback(
     async (merchantName: string, isOwnedBy: string) => {
@@ -76,7 +95,7 @@ export default function App() {
       const billionaires = await fetchBillionaires();
       console.log(`Billionaires: ${billionaires}`);
       if (billionaires) {
-        setBillionaires(billionaires);
+        setBillionaires(billionaires.map((billionaire) => billionaire.name));
       }
     };
 
@@ -105,13 +124,21 @@ export default function App() {
 
       transactions.forEach((tx) => {
         const merchantInfo = merchantsMap.get(tx.merchantName);
-        if (merchantInfo) {
+        if (merchantInfo && billionaires?.includes(merchantInfo.isOwnedBy)) { // Check if the merchant is owned by a billionaire in the list
           newBillionaireSpending[merchantInfo.isOwnedBy] = (newBillionaireSpending[merchantInfo.isOwnedBy] || 0) + tx.amount;
         }
       });
 
       setTotalSpending(newTotalSpending);
       setBillionaireSpending(newBillionaireSpending);
+
+      const totalSpendingToBillionaires = Object.values(newBillionaireSpending).reduce((sum, value) => sum + value, 0);
+      console.log(`Total Billionaire Spend: ${totalSpendingToBillionaires}`)
+      const newTotalSpendingNotToBillionaires = newTotalSpending - totalSpendingToBillionaires;
+      const newPercentSpendingNotToBillionaires = (newTotalSpendingNotToBillionaires / newTotalSpending) * 100;
+
+      setTotalSpendingNotToBillionaires(newTotalSpendingNotToBillionaires);
+      setPercentSpendingNotToBillionaires(newPercentSpendingNotToBillionaires);
     }
   }, [transactions, merchantsMap]);
 
@@ -136,12 +163,13 @@ export default function App() {
                   Add Billionaire
                 </Button>
               </Stack>
+              {errorMessage && <Typography color="error">{errorMessage}</Typography>}
               <List>
                 <Typography variant="h6">List of Billionaires:</Typography>
                 {billionaires?.map((billionaire) => (
-                  <ListItem key={billionaire.name}>
-                    {billionaire.name}
-                    <Button variant="contained" color="secondary" onClick={() => handleDeleteBillionaire(billionaire.name)}>
+                  <ListItem key={billionaire}>
+                    {billionaire}
+                    <Button variant="contained" color="secondary" onClick={() => handleDeleteBillionaire(billionaire)}>
                       Delete
                     </Button>
                   </ListItem>
@@ -152,13 +180,22 @@ export default function App() {
                   Total Spending: ${totalSpending.toFixed(2)}
                 </Typography>
               </Stack>
+              <Stack direction="row" justifyContent="center">
+                {/* Display total amount and percentage not going to any billionaire */}
+                <Typography variant="h6">
+                  Total amount not going to any billionaire: ${totalSpendingNotToBillionaires.toFixed(2)}
+                </Typography>
+                <Typography variant="h6">
+                  Percentage of money not going to any billionaire: {percentSpendingNotToBillionaires.toFixed(2)}%
+                </Typography>
+              </Stack>
               <Grid container spacing={2}>
                 {billionaires?.map((billionaire) => {
-                  const total = billionaireSpending[billionaire.name] || 0;
+                  const total = billionaireSpending[billionaire] || 0;
                   const percent = (total / totalSpending) * 100;
                   return (
-                    <Grid item xs={12} sm={4} key={billionaire.name}>
-                      <Stats key={billionaire.name} name={billionaire.name} total={total} percent={percent} />
+                    <Grid item xs={12} sm={4} key={billionaire}>
+                      <Stats key={billionaire} name={billionaire} total={total} percent={percent} />
                     </Grid>
                   );
                 })}

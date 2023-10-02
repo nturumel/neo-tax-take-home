@@ -36,3 +36,25 @@ export async function deleteMany(req: Request, res: Response, next: NextFunction
   await Promise.all(billionaires.map((billionaire) => billionaireModel.remove(billionaire)));
   return next();
 }
+
+// In your billionaireController file
+export async function createBillionaire(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const { name } = req.body;
+  try {
+    await billionaireModel.create({ name });
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+}
+
+// Delete a single billionaire by name
+export async function deleteByName(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const { name } = req.body;
+  try {
+    await billionaireModel.removeByName(name);
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+}
