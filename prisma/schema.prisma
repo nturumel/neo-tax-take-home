@@ -10,6 +10,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model billionaires {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+}
+
 model merchants {
   id        Int    @id @default(autoincrement())
   name      String @unique

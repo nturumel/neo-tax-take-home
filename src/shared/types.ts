@@ -9,3 +9,8 @@ export type Merchant = {
   name: string;
   isOwnedBy: string;
 };
+
+export type Billionaire = {
+  name: string;
+  id: number;
+};

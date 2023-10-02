@@ -2,11 +2,13 @@ import { Router, Request, Response, NextFunction } from 'express';
 
 import transactionsRouter from './transactions';
 import merchantsRouter from './merchants';
+import billionairesRouter from './billionaires';
 
 const router: Router = Router();
 
 router.use('/transactions', transactionsRouter);
 router.use('/merchants', merchantsRouter);
+router.use('/billionaires', billionairesRouter);
 
 // Global Error Handler
 router.use((err: Error, req: Request, res: Response, next: NextFunction) => {

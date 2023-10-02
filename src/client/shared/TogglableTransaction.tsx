@@ -6,14 +6,16 @@ import Select, { SelectChangeEvent } from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 
 import { OwnableTransaction } from './../utils/types';
-import { BillionaireList } from '../../shared/constants';
+import { Billionaire } from '../../shared/types';
 
 export default function TogglableTransaction({
   transaction,
   handleChangeOfOwner,
+  billionaires
 }: {
   transaction: OwnableTransaction;
   handleChangeOfOwner: (name: string, isOwnedBy: string) => void;
+  billionaires: Billionaire[]
 }) {
   const handleChange = (event: SelectChangeEvent<string>, child: React.ReactNode) => {
     handleChangeOfOwner(transaction.merchantName, event.target.value as string);
@@ -33,9 +35,9 @@ export default function TogglableTransaction({
             <MenuItem value="">
               <em>None</em>
             </MenuItem>
-            {BillionaireList.map((billionaire) => (
-              <MenuItem key={billionaire} value={billionaire}>
-                {billionaire}
+            {billionaires.map((billionaire) => (
+              <MenuItem key={billionaire.name} value={billionaire.name}>
+                {billionaire.name}
               </MenuItem>
             ))}
           </Select>

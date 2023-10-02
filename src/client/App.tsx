@@ -1,23 +1,41 @@
-import React, { useState, useEffect, useCallback } from 'react';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
+import React, { useCallback, useEffect, useState } from 'react';
 
-import Header from './wallet/Header';
-import Stats from './wallet/BezoStats';
-import TransactionList from './wallet/TransactionList';
+import { Button, Grid, List, ListItem, TextField, Typography } from '@mui/material';
+import { Billionaire, Merchant, Transaction } from './../shared/types';
 import Splash from './shared/Splash';
-import { Transaction } from './../shared/types';
-import { fetchTransactions, fetchMerchants, updateMerchant } from './utils/fetch';
-import { BillionaireList } from '../shared/constants';
-import { Grid, Typography } from '@mui/material';
+import { addBillionaires, deleteBillionaires, fetchBillionaires, fetchMerchants, fetchTransactions, updateMerchant } from './utils/fetch';
+import Stats from './wallet/BezoStats';
+import Header from './wallet/Header';
+import TransactionList from './wallet/TransactionList';
 
 const POLL_FREQUENCY_MS = 10000;
 
 export default function App() {
   const [transactions, setTransactions] = useState<Transaction[] | null>(null);
-  const [merchantsMap, setMerchantsMap] = useState<Map<string, { name: string, isOwnedBy: string }> | null>(null);
+  const [merchantsMap, setMerchantsMap] = useState<Map<string, Merchant> | null>(null);
+  const [billionaires, setBillionaires] = useState<Billionaire[] | null>(null);
   const [billionaireSpending, setBillionaireSpending] = useState<Record<string, number>>({});
   const [totalSpending, setTotalSpending] = useState<number>(0);
+
+  const [newBillionaireName, setNewBillionaireName] = useState('');
+
+  const handleAddBillionaire = async () => {
+    const newBillionaire = { name: newBillionaireName, id: -1 }; // Assuming the backend will auto-generate an ID
+    const isSuccess = await addBillionaires([newBillionaire]);
+    if (isSuccess) {
+      setBillionaires([...(billionaires || []), newBillionaire]);
+      setNewBillionaireName('');
+    }
+  };
+
+  const handleDeleteBillionaire = async (name: string) => {
+    const isSuccess = await deleteBillionaires([{ name: name, id: -1 }]);
+    if (isSuccess) {
+      setBillionaires(billionaires?.filter(b => b.name !== name) || null);
+    }
+  };
 
   const handleChangeOfOwner = useCallback(
     async (merchantName: string, isOwnedBy: string) => {
@@ -46,7 +64,7 @@ export default function App() {
   );
 
   useEffect(() => {
-    const fetchTransactionsAndMerchants = async () => {
+    const fetchTransactionsAndMerchantsAndBillionaires = async () => {
       const fetchedTransactions = await fetchTransactions();
       setTransactions(fetchedTransactions);
 
@@ -54,9 +72,15 @@ export default function App() {
       if (merchants) {
         setMerchantsMap(new Map(merchants.map((merchant) => [merchant.name, merchant])));
       }
+
+      const billionaires = await fetchBillionaires();
+      console.log(`Billionaires: ${billionaires}`);
+      if (billionaires) {
+        setBillionaires(billionaires);
+      }
     };
 
-    fetchTransactionsAndMerchants();
+    fetchTransactionsAndMerchantsAndBillionaires();
   }, []);
 
   useEffect(() => {
@@ -100,18 +124,41 @@ export default function App() {
             <Splash />
           ) : (
             <>
+              <Header />
+              {/* Add/Delete Billionaire Section */}
+              <Stack direction="row" spacing={2}>
+                <TextField
+                  label="New Billionaire"
+                  value={newBillionaireName}
+                  onChange={(e) => setNewBillionaireName(e.target.value)}
+                />
+                <Button variant="contained" color="primary" onClick={handleAddBillionaire}>
+                  Add Billionaire
+                </Button>
+              </Stack>
+              <List>
+                <Typography variant="h6">List of Billionaires:</Typography>
+                {billionaires?.map((billionaire) => (
+                  <ListItem key={billionaire.name}>
+                    {billionaire.name}
+                    <Button variant="contained" color="secondary" onClick={() => handleDeleteBillionaire(billionaire.name)}>
+                      Delete
+                    </Button>
+                  </ListItem>
+                ))}
+              </List>
               <Stack direction="row" justifyContent="center">
                 <Typography variant="h3" color="primary.main">
                   Total Spending: ${totalSpending.toFixed(2)}
                 </Typography>
               </Stack>
               <Grid container spacing={2}>
-                {BillionaireList.map((billionaire) => {
-                  const total = billionaireSpending[billionaire] || 0;
+                {billionaires?.map((billionaire) => {
+                  const total = billionaireSpending[billionaire.name] || 0;
                   const percent = (total / totalSpending) * 100;
                   return (
-                    <Grid item xs={12} sm={4} key={billionaire}>
-                      <Stats key={billionaire} name={billionaire} total={total} percent={percent} />
+                    <Grid item xs={12} sm={4} key={billionaire.name}>
+                      <Stats key={billionaire.name} name={billionaire.name} total={total} percent={percent} />
                     </Grid>
                   );
                 })}
@@ -120,6 +167,7 @@ export default function App() {
                 transactions={transactions}
                 merchantsMap={merchantsMap}
                 handleChangeOfOwner={handleChangeOfOwner}
+                billionaires={billionaires || []}
               />
             </>
           )}

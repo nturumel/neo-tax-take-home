@@ -5,4 +5,4 @@ export const BillionaireList = [
     'Mark Zuckerburg',
     'Elon Musk',
     'Warren Buffet'
-]
+];

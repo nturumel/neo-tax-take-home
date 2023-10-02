@@ -2,18 +2,20 @@ import React from 'react';
 import Stack from '@mui/material/Stack';
 
 import TogglableTransaction from './../shared/TogglableTransaction';
-import { Transaction } from './../../shared/types';
+import { Billionaire, Transaction } from './../../shared/types';
 
 export default function TransactionList({
   transactions,
   merchantsMap,
   handleChangeOfOwner,
+  billionaires
 }: {
   transactions: Transaction[];
   merchantsMap: Map<string, {
     name: string;
     isOwnedBy: string;
   }>;
+  billionaires: Billionaire[]
   handleChangeOfOwner: (name: string, isOwnedBy: string) => void;
 }) {
   return (
@@ -26,6 +28,7 @@ export default function TransactionList({
             key={transaction.id}
             transaction={Object.assign({ isOwnedBy }, transaction)}
             handleChangeOfOwner={handleChangeOfOwner}
+            billionaires={billionaires}
           />
         );
       })}
