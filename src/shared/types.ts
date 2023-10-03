@@ -7,5 +7,10 @@ export type Transaction = {
 
 export type Merchant = {
   name: string;
-  isOwnedByBezos: boolean;
+  isOwnedBy: string;
+};
+
+export type Billionaire = {
+  name: string;
+  id: number;
 };

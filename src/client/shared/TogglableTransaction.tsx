@@ -1,54 +1,63 @@
 import React from 'react';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import Checkbox from '@mui/material/Checkbox';
 import Typography from '@mui/material/Typography';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 
 import { OwnableTransaction } from './../utils/types';
 
 export default function TogglableTransaction({
   transaction,
-  toggleBezosMerchant,
+  handleChangeOfOwner,
+  billionaires
 }: {
   transaction: OwnableTransaction;
-  toggleBezosMerchant: (name: string, isOwnedByBezos: boolean) => void;
+  handleChangeOfOwner: (name: string, isOwnedBy: string) => void;
+  billionaires: string[]
 }) {
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    toggleBezosMerchant(transaction.merchantName, event.target.checked);
+  const handleChange = (event: SelectChangeEvent<string>, child: React.ReactNode) => {
+    handleChangeOfOwner(transaction.merchantName, event.target.value as string);
   };
 
   return (
-    <Paper elevation={1} sx={{ backgroundColor: 'primary' }}>
-      <Stack direction="row" alignItems="center">
-        <Checkbox
-          aria-label="Is transaction merchant owned by Bezos? checkbox"
-          checked={transaction.isOwnedByBezos}
-          onChange={handleChange}
-        />
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-around"
-          width="100%"
-          sx={{ flexWrap: 'wrap', paddingLeft: 2, paddingRight: 2 }}
-        >
-          <Stack direction="row" minWidth="25%">
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              {transaction.date.toLocaleDateString()}
-            </Typography>
-          </Stack>
+    <Paper elevation={1}>
+      <Stack direction="row" alignItems="center" spacing={2}>
+        <Stack flexGrow={1} justifyContent="center">
+          <Select
+            value={transaction.isOwnedBy || ''}
+            onChange={handleChange}
+            label="Owned By"
+            variant="outlined"
+            fullWidth
+          >
+            <MenuItem value="">
+              <em>None</em>
+            </MenuItem>
+            {billionaires.map((billionaire) => (
+              <MenuItem key={billionaire} value={billionaire}>
+                {billionaire}
+              </MenuItem>
+            ))}
+          </Select>
+        </Stack>
 
-          <Stack direction="row" minWidth="40%">
-            <Typography variant="body1" sx={{ fontWeight: 800 }}>
-              {transaction.merchantName}
-            </Typography>
-          </Stack>
+        <Stack flexGrow={1} justifyContent="center">
+          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+            {transaction.date.toLocaleDateString()}
+          </Typography>
+        </Stack>
 
-          <Stack direction="row" minWidth="15%">
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              ${transaction.amount.toFixed(2)}
-            </Typography>
-          </Stack>
+        <Stack flexGrow={1} justifyContent="center">
+          <Typography variant="body1" sx={{ fontWeight: 800 }}>
+            {transaction.merchantName}
+          </Typography>
+        </Stack>
+
+        <Stack flexGrow={1} justifyContent="center">
+          <Typography variant="body1" sx={{ fontWeight: 500 }}>
+            ${transaction.amount.toFixed(2)}
+          </Typography>
         </Stack>
       </Stack>
     </Paper>

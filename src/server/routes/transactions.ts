@@ -11,27 +11,30 @@ const router: Router = Router();
  * transactions with ID greater than lastID.
  */
 router.get('/', transactionsController.getTransactions, (req: Request, res: Response, next: NextFunction) => {
-  if (!res.locals.transactions) {
-    return next('Reached responding middleware function without res.locals.transactions set.');
+  try {
+    if (!res.locals.transactions) {
+      return next('Reached responding middleware function without res.locals.transactions set.');
+    }
+
+    // Sanitize transactions and convert to front-end compatible format
+    const frontEndTransaction: Transaction[] = (res.locals.transactions as Array<PlaidTransaction>)
+      .map((transaction) => ({
+        id: transaction.id,
+        merchantName: transaction.merchant_name,
+        date: new Date(transaction.date),
+        amount: transaction.amount,
+      }))
+      .filter((transaction) => {
+        const month = 0, year = 2029;
+        return transaction.date.getMonth() === month && transaction.date.getFullYear() === year;
+      });
+
+    return res.json(frontEndTransaction);
+
   }
-
-  // Sanitize transactions and convert to front-end compatible format
-  const frontEndTransaction: Transaction[] = (res.locals.transactions as Array<PlaidTransaction>)
-    .map((transaction) => ({
-      id: transaction.id,
-      merchantName: transaction.merchant_name,
-      date: new Date(transaction.date),
-      amount: transaction.amount,
-    }))
-    .filter((transaction) => {
-      // Actual implementation would use request query parameters
-      const month = 0,
-        year = 2029;
-
-      return transaction.date.getMonth() === month && transaction.date.getFullYear() === year;
-    });
-
-  return res.json(frontEndTransaction);
+  catch (error) {
+    next(error);
+  }
 });
 
 export default router;

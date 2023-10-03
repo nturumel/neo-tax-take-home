@@ -1,4 +1,4 @@
-import { Transaction, Merchant } from './../../shared/types';
+import { Transaction, Merchant, Billionaire } from './../../shared/types';
 
 /**
  * Fetch array of transactions from back-end.
@@ -76,12 +76,12 @@ export async function fetchMerchants(): Promise<Merchant[] | null> {
 }
 
 function isValidMerchant(merchant: Merchant): boolean {
-  return typeof merchant.name === 'string' && typeof merchant.isOwnedByBezos === 'boolean';
+  return typeof merchant.name === 'string' && typeof merchant.isOwnedBy === 'string';
 }
 
 /**
- * Add merchants to back-end as Bezos owned.
- * @param merchants Array of Bezos owned merchants.
+ * Add merchants to back-end.
+ * @param merchants Array of owned merchants.
  */
 export async function addMerchants(merchants: Merchant[]): Promise<boolean> {
   const response = await fetch('/api/merchants', {
@@ -115,6 +115,142 @@ export async function deleteMerchants(merchants: Merchant[]): Promise<boolean> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(merchants),
+  });
+
+  const result = await response.json();
+
+  if (response.status !== 200) {
+    console.error(result.error);
+    return false;
+  }
+
+  return true;
+}
+
+// Add this function to update a single merchant
+export async function updateMerchant(merchant: Merchant): Promise<boolean> {
+  const response = await fetch('/api/merchants', {
+    method: 'PUT',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify([merchant]), // Wrapping in array as your backend expects an array
+  });
+
+  const result = await response.json();
+
+  if (response.status !== 200) {
+    console.error(result.error);
+    return false;
+  }
+
+  return true;
+}
+
+// Fetch array of billionaires from back-end.
+export async function fetchBillionaires(): Promise<Billionaire[] | null> {
+  const response = await fetch('/api/billionaires', {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+
+  const billionaires: Billionaire[] | { error: string } = await response.json();
+
+  if (response.status !== 200 || 'error' in billionaires) {
+    console.error((billionaires as { error: string }).error);
+    return null;
+  }
+
+  // Sanitize received data
+  const sanitizedBillionaires = billionaires.filter((billionaire) => isValidBillionaire(billionaire));
+
+  if (sanitizedBillionaires.length !== billionaires.length) {
+    console.error('Some of the received billionaires were in an invalid format.');
+  }
+
+  return sanitizedBillionaires;
+}
+
+// Verify a billionaire contains all properties of a Billionaire.
+function isValidBillionaire(billionaire: Billionaire): boolean {
+  return typeof billionaire.id === 'number' && typeof billionaire.name === 'string';
+}
+
+// Add billionaires to back-end.
+export async function addBillionaires(billionaires: Billionaire[]): Promise<boolean> {
+  const response = await fetch('/api/billionaires', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(billionaires),
+  });
+
+  const result = await response.json();
+
+  if (response.status !== 200) {
+    console.error(result.error);
+    return false;
+  }
+
+  return true;
+}
+
+// Delete billionaires from back-end.
+export async function deleteBillionaires(billionaires: Billionaire[]): Promise<boolean> {
+  const response = await fetch('/api/billionaires', {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(billionaires),
+  });
+
+  const result = await response.json();
+
+  if (response.status !== 200) {
+    console.error(result.error);
+    return false;
+  }
+
+  return true;
+}
+
+// Add billionaires to back-end.
+export async function createBillionaire(name: string): Promise<boolean> {
+  const response = await fetch('/api/billionaires/create', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  });
+
+  const result = await response.json();
+
+  if (response.status !== 200) {
+    console.error(result.error);
+    return false;
+  }
+
+  return true;
+}
+
+// Delete a single billionaire by name from back-end.
+export async function deleteBillionaireByName(name: string): Promise<boolean> {
+  const response = await fetch('/api/billionaires/deleteByName', {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
   });
 
   const result = await response.json();

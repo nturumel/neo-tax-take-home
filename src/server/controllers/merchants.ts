@@ -12,7 +12,7 @@ export async function getMerchants(req: Request, res: Response, next: NextFuncti
   // Sanitize merchants and convert to front-end compatible format
   const merchants: MerchantSchema[] = dbMerchants.map((dbMerchant) => ({
     name: dbMerchant.name,
-    isOwnedByBezos: dbMerchant.isOwnedByBezos,
+    isOwnedBy: dbMerchant.isOwnedBy,
   }));
   res.locals.merchants = merchants;
   return next();
